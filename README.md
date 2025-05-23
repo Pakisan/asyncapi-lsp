@@ -5,4 +5,26 @@
 
 # AsyncAPI LSP(Language Server Protocol)
 
-WIP
+## Server
+
+AsyncAPI specifications:
+
+| version | status |
+|---------|--------|
+| 2.0.0   | ❌      |
+| 2.1.0   | ❌      |
+| 2.2.0   | ❌      |
+| 2.3.0   | ❌      |
+| 2.4.0   | ❌      |
+| 2.5.0   | ❌      |
+| 2.6.0   | ️🤔    |
+| 3.0.0   | ⚒️     |
+
+
+LSP features:
+
+| name                                                                                                                                   | description                         | status |
+|----------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|--------|
+| [textDocument/codeAction](https://microsoft.github.io/language-server-protocol/specification/#textDocument_codeAction)                 | Quick-fixes for errors and warnings | 🤔     |
+| [textDocument/publishDiagnostics](https://microsoft.github.io/language-server-protocol/specification/#textDocument_publishDiagnostics) | Quick-fixes for errors and warnings | ⚒️     |
+| [textDocument/completion](https://microsoft.github.io/language-server-protocol/specification/#textDocument_completion)                 | Code completion                     | 🤔     |
