@@ -29,6 +29,9 @@ dependencies {
     // JSON Schema validation
     implementation("com.networknt:json-schema-validator:1.5.6")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.1")
+
+    // Assertions
+    testImplementation("org.assertj:assertj-core:3.27.3")
 }
 
 tasks.test {

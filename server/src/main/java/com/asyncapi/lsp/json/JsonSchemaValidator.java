@@ -1,11 +1,19 @@
 package com.asyncapi.lsp.json;
 
-import com.networknt.schema.*;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.networknt.schema.InputFormat;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
 import com.networknt.schema.serialization.DefaultJsonNodeReader;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Set;
-
+/**
+ * Validates JSON AsyncAPI specification against AsyncAPI JSON Schema
+ *
+ * @author Pavel Bodiachevskii
+ * @since 1.0.0
+ */
 public class JsonSchemaValidator {
 
     @NotNull
@@ -25,10 +33,23 @@ public class JsonSchemaValidator {
     }
 
     @NotNull
-    public Set<ValidationMessage> validate(@NotNull String document, boolean isJson) {
+    public ValidationResult validate(@NotNull String document, boolean isJson) {
         final var inputFormat = isJson ? InputFormat.JSON : InputFormat.YAML;
 
-        return asyncAPIJsonSchemaV3.validate(document, inputFormat);
+        try {
+            @NotNull final var validationMessages = asyncAPIJsonSchemaV3.validate(document, inputFormat);
+            @NotNull final ValidationResult validationResult = validationMessages.isEmpty()
+                    ? ValidationResult.valid()
+                    : ValidationResult.validationError(validationMessages);
+
+            return validationResult;
+        } catch (IllegalArgumentException illegalArgumentException) {
+            if (illegalArgumentException.getCause() instanceof JsonParseException jsonParseException) {
+                return ValidationResult.parsingError(jsonParseException);
+            }
+
+            throw illegalArgumentException;
+        }
     }
 
 }

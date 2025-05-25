@@ -1,40 +1,219 @@
 package com.asyncapi.lsp.json;
 
+import com.fasterxml.jackson.core.JsonLocation;
+import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.serialization.node.JsonLocationAware;
 import com.networknt.schema.serialization.node.JsonLocationAwareObjectNode;
-import org.junit.jupiter.api.Assertions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("JSON")
+@DisplayName("JSON validator")
 public class JsonSchemaValidatorTest {
 
     private final JsonSchemaValidator jsonSchemaValidator = new JsonSchemaValidator();
 
     @Test
-    @DisplayName("validate: info without title and version")
-    public void validateInfoWithoutTitleVersion() throws IOException {
-        try (var inputStream = getClass().getClassLoader().getResourceAsStream("schema/info without title version.json")) {
-            final var specification = new String(inputStream.readAllBytes());
-            final var result = jsonSchemaValidator.validate(specification, true).stream().toList();
+    @DisplayName("minimal specification is valid")
+    public void minimalSpecificationIsValid() {
+        final var result = jsonSchemaValidator.validate(
+                """
+                        {
+                          "asyncapi": "3.0.0",
+                          "info": {
+                            "title": "Minimalistic AsyncAPI specification",
+                            "version": "1.0.0"
+                          }
+                        }
+                        """,
+                true
+        );
 
-            var expectedProperty = result.getFirst();
-            Assertions.assertEquals("required", expectedProperty.getType());
-            Assertions.assertEquals("version", expectedProperty.getProperty());
-            Assertions.assertEquals("$.info", expectedProperty.getInstanceLocation().toString());
-            var location = (JsonLocationAwareObjectNode) expectedProperty.getInstanceNode();
-            Assertions.assertEquals(3, location.tokenLocation().getLineNr());
-            Assertions.assertEquals(11, location.tokenLocation().getColumnNr());
+        assertThat(ValidationResult.valid()).isEqualTo(result);
+    }
 
-            expectedProperty = result.get(1);
-            Assertions.assertEquals("required", expectedProperty.getType());
-            Assertions.assertEquals("title", expectedProperty.getProperty());
-            Assertions.assertEquals("$.info", expectedProperty.getInstanceLocation().toString());
-            location = (JsonLocationAwareObjectNode) expectedProperty.getInstanceNode();
-            Assertions.assertEquals(3, location.tokenLocation().getLineNr());
-            Assertions.assertEquals(11, location.tokenLocation().getColumnNr());
-        }
+    @Test
+    @DisplayName("minimal specification is not valid when is malformed JSON")
+    public void minimalSpecificationIsNoValidWhenIsMalformedJson() {
+        final var result = jsonSchemaValidator.validate(
+                """
+                        {
+                          "asyncapi": "3.0.0",
+                          "info": {
+                            "title": "Minimalistic AsyncAPI specification",
+                            "version": "1.0.0",
+                          }
+                        }
+                        """,
+                true
+        );
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(ValidationErrorType.JSON_PARSING).isEqualTo(result.validationErrorType());
+        assertThat(result.validationMessages()).isNull();
+
+        checkJsonParsingMessage(
+                result.jsonParsingMessage(),
+                "Unexpected character ('}' (code 125)): was expecting double-quote to start field name",
+                6,
+                3
+        );
+    }
+
+    @Test
+    @DisplayName("specification without required fields is not valid")
+    public void specificationWithoutRequiredFieldsIsNotValid() {
+        final var result = jsonSchemaValidator.validate(
+                """
+                        {
+                          "asyncapi": "3.0.0"
+                        }
+                        """,
+                true
+        );
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.validationMessages()).isNotNull();
+        assertThat(result.validationMessages()).size().isEqualTo(1);
+        checkRequiredValidationMessage(
+                result.validationMessages().stream().toList().getFirst(),
+                "info",
+                "$",
+                "$: required property 'info' not found",
+                1,
+                1
+        );
+    }
+
+
+    @Test
+    @DisplayName("specification without required info fields is not valid")
+    public void specificationWithoutRequiredInfoFieldsIsNotValid() {
+        final var result = jsonSchemaValidator.validate(
+                """
+                        {
+                          "asyncapi": "3.0.0",
+                          "info": {
+                          }
+                        }
+                        """,
+                true
+        );
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.validationMessages()).isNotNull();
+        assertThat(result.validationMessages()).size().isEqualTo(2);
+
+        checkRequiredValidationMessage(
+                result.validationMessages().stream().toList().getFirst(),
+                "version",
+                "$.info",
+                "$.info: required property 'version' not found",
+                3,
+                11
+        );
+
+        checkRequiredValidationMessage(
+                result.validationMessages().stream().toList().get(1),
+                "title",
+                "$.info",
+                "$.info: required property 'title' not found",
+                3,
+                11
+        );
+    }
+
+    @Test
+    @DisplayName("specification with unknown property is not valid")
+    public void specificationWithUnknownPropertyIsNotValid() {
+        final var result = jsonSchemaValidator.validate(
+                """
+                        {
+                          "asyncapi": "3.0.0",
+                          "custom": "property",
+                          "info": {
+                            "title": "Minimalistic AsyncAPI specification",
+                            "version": "1.0.0"
+                          }
+                        }
+                        """,
+                true
+        );
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.validationMessages()).isNotNull();
+
+        checkAdditionalPropertiesValidationMessage(
+                result.validationMessages().stream().toList().getFirst(),
+                "custom",
+                "$: property 'custom' is not defined in the schema and the schema does not allow additional properties",
+                3,
+                13
+        );
+    }
+
+    public void checkLineAndColumnNumbers(
+            @NotNull JsonLocation jsonLocation,
+            int expectedLineNumber,
+            int expectedColumnNumber
+    ) throws AssertionError {
+        assertThat(jsonLocation).isNotNull();
+        assertThat(jsonLocation.getLineNr()).isEqualTo(expectedLineNumber);
+        assertThat(jsonLocation.getColumnNr()).isEqualTo(expectedColumnNumber);
+    }
+
+    public void checkJsonParsingMessage(
+            @Nullable JsonParsingMessage jsonParsingMessage,
+            @NotNull String expectedMessage,
+            int expectedLineNumber,
+            int expectedColumnNumber
+    ) throws AssertionError {
+        assertThat(jsonParsingMessage).isNotNull();
+        assertThat(jsonParsingMessage.getMessage()).isEqualTo(expectedMessage);
+
+        checkLineAndColumnNumbers(jsonParsingMessage.getLocation(), expectedLineNumber, expectedColumnNumber);
+    }
+
+    public void checkRequiredValidationMessage(
+            @NotNull ValidationMessage validationMessage,
+            @NotNull String expectedProperty,
+            @NotNull String expectedPropertyLocation,
+            @NotNull String expectedMessage,
+            int expectedLineNumber,
+            int expectedColumnNumber
+    ) throws AssertionError {
+        assertThat(validationMessage).isNotNull();
+        assertThat(validationMessage.getType()).isEqualTo("required");
+        assertThat(validationMessage.getProperty()).isEqualTo(expectedProperty);
+        assertThat(validationMessage.getInstanceLocation().toString()).isEqualTo(expectedPropertyLocation);
+        assertThat(validationMessage.getMessage()).isEqualTo(expectedMessage);
+
+        assertThat(validationMessage.getInstanceNode()).isInstanceOf(JsonLocationAware.class);
+        final var location = ((JsonLocationAware) validationMessage.getInstanceNode()).tokenLocation();
+        assertThat(location.getLineNr()).isEqualTo(expectedLineNumber);
+        assertThat(location.getColumnNr()).isEqualTo(expectedColumnNumber);
+    }
+
+    public void checkAdditionalPropertiesValidationMessage(
+            @NotNull ValidationMessage validationMessage,
+            @NotNull String expectedProperty,
+            @NotNull String expectedMessage,
+            int expectedLineNumber,
+            int expectedColumnNumber
+    ) throws AssertionError {
+        assertThat(validationMessage).isNotNull();
+        assertThat(validationMessage.getType()).isEqualTo("additionalProperties");
+        assertThat(validationMessage.getProperty()).isEqualTo(expectedProperty);
+        assertThat(validationMessage.getMessage()).isEqualTo(expectedMessage);
+
+        assertThat(validationMessage.getInstanceNode()).isInstanceOf(JsonLocationAwareObjectNode.class);
+        final var instanceNode = (JsonLocationAwareObjectNode) validationMessage.getInstanceNode();
+        final var forbiddenNodeLocation = ((JsonLocationAware) instanceNode.findPath(expectedProperty)).tokenLocation();
+        assertThat(forbiddenNodeLocation.getLineNr()).isEqualTo(expectedLineNumber);
+        assertThat(forbiddenNodeLocation.getColumnNr()).isEqualTo(expectedColumnNumber);
     }
 
 }
