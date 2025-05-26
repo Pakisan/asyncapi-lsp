@@ -155,6 +155,54 @@ public class JsonSchemaValidatorTest {
         );
     }
 
+    @Test
+    @DisplayName("specification with unknown properties is not valid")
+    public void specificationWithUnknownPropertiesIsNotValid() {
+        final var result = jsonSchemaValidator.validate(
+                """
+                        {
+                          "asyncapi": "3.0.0",
+                          "custom #1": "property",
+                          "info": {
+                            "title": "Minimalistic AsyncAPI specification",
+                            "custom #2": "property",
+                            "version": "1.0.0"
+                          },
+                          "custom #3": "property"
+                        }
+                        """,
+                true
+        );
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.validationMessages()).isNotNull();
+        assertThat(result.validationMessages().size()).isEqualTo(3);
+
+        checkAdditionalPropertiesValidationMessage(
+                result.validationMessages().stream().toList().getFirst(),
+                "custom #2",
+                "$.info: property 'custom #2' is not defined in the schema and the schema does not allow additional properties",
+                6,
+                18
+        );
+
+        checkAdditionalPropertiesValidationMessage(
+                result.validationMessages().stream().toList().get(1),
+                "custom #1",
+                "$: property 'custom #1' is not defined in the schema and the schema does not allow additional properties",
+                3,
+                16
+        );
+
+        checkAdditionalPropertiesValidationMessage(
+                result.validationMessages().stream().toList().get(2),
+                "custom #3",
+                "$: property 'custom #3' is not defined in the schema and the schema does not allow additional properties",
+                9,
+                16
+        );
+    }
+
     public void checkLineAndColumnNumbers(
             @NotNull JsonLocation jsonLocation,
             int expectedLineNumber,
