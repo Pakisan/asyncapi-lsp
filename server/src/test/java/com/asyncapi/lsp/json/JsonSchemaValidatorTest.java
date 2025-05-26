@@ -203,6 +203,68 @@ public class JsonSchemaValidatorTest {
         );
     }
 
+    @Test
+    @DisplayName("specification with wrong property type is not valid")
+    public void specificationWithWrongPropertyTypeIsNotValid() {
+        final var result = jsonSchemaValidator.validate(
+                """
+                        {
+                          "asyncapi": "3.0.0",
+                          "info": {
+                            "title": "Minimalistic AsyncAPI specification",
+                            "version": "1.0.0",
+                            "tags": [
+                                { "$ref": "https://exmaple.com/reference" },
+                                1,
+                                { "name": "tag #1" }
+                            ]
+                          },
+                          "servers": []
+                        }
+                        """,
+                true
+        );
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.validationMessages()).isNotNull();
+
+        checkConstraintValidationMessage(
+                result.validationMessages().stream().toList().getFirst(),
+                "oneOf", //
+                "$.info.tags[1]: must be valid to one and only one schema, but 0 are valid",
+                "$.info.tags[1]",
+                8,
+                9
+        );
+
+        checkConstraintValidationMessage(
+                result.validationMessages().stream().toList().get(1),
+                "type", //
+                "$.info.tags[1]: integer found, object expected",
+                "$.info.tags[1]",
+                8,
+                9
+        );
+
+        checkConstraintValidationMessage(
+                result.validationMessages().stream().toList().get(2),
+                "type", //
+                "$.info.tags[1]: integer found, object expected",
+                "$.info.tags[1]",
+                8,
+                9
+        );
+
+        checkConstraintValidationMessage(
+                result.validationMessages().stream().toList().get(3),
+                "type", //
+                "$.servers: array found, object expected",
+                "$.servers",
+                12,
+                14
+        );
+    }
+
     public void checkLineAndColumnNumbers(
             @NotNull JsonLocation jsonLocation,
             int expectedLineNumber,
@@ -262,6 +324,26 @@ public class JsonSchemaValidatorTest {
         final var forbiddenNodeLocation = ((JsonLocationAware) instanceNode.findPath(expectedProperty)).tokenLocation();
         assertThat(forbiddenNodeLocation.getLineNr()).isEqualTo(expectedLineNumber);
         assertThat(forbiddenNodeLocation.getColumnNr()).isEqualTo(expectedColumnNumber);
+    }
+
+    public void checkConstraintValidationMessage(
+            @NotNull ValidationMessage validationMessage,
+            @NotNull String expectedMessageKey,
+            @NotNull String expectedMessage,
+            @NotNull String expectedPropertyLocation,
+            int expectedLineNumber,
+            int expectedColumnNumber
+    ) throws AssertionError {
+        assertThat(validationMessage).isNotNull();
+        assertThat(validationMessage.getMessageKey()).isEqualTo(expectedMessageKey);
+        assertThat(validationMessage.getMessage()).isEqualTo(expectedMessage);
+        assertThat(validationMessage.getInstanceLocation().toString()).isEqualTo(expectedPropertyLocation);
+
+        assertThat(validationMessage.getInstanceNode()).isInstanceOf(JsonLocationAware.class);
+        final var instanceNode = (JsonLocationAware) validationMessage.getInstanceNode();
+        final var invalidNodeLocation = ((JsonLocationAware) instanceNode).tokenLocation();
+        assertThat(invalidNodeLocation.getLineNr()).isEqualTo(expectedLineNumber);
+        assertThat(invalidNodeLocation.getColumnNr()).isEqualTo(expectedColumnNumber);
     }
 
 }
