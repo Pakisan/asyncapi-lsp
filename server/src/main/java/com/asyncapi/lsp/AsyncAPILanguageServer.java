@@ -3,9 +3,10 @@ package com.asyncapi.lsp;
 import com.asyncapi.lsp.service.AsyncAPITextDocumentService;
 import com.asyncapi.lsp.service.AsyncAPIWorkspaceService;
 import org.eclipse.lsp4j.*;
-import org.eclipse.lsp4j.services.*;
+import org.eclipse.lsp4j.services.LanguageServer;
+import org.eclipse.lsp4j.services.TextDocumentService;
+import org.eclipse.lsp4j.services.WorkspaceService;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -16,9 +17,6 @@ public class AsyncAPILanguageServer implements LanguageServer {
 
     @NotNull
     private final WorkspaceService workspaceService;
-
-    @Nullable
-    private LanguageClient client;
 
     private int shutDownStatus = 1;
 
@@ -33,6 +31,7 @@ public class AsyncAPILanguageServer implements LanguageServer {
         final var initializeResult = new InitializeResult(new ServerCapabilities());
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
         initializeResult.getCapabilities().setCompletionProvider(new CompletionOptions());
+        initializeResult.getCapabilities().setDiagnosticProvider(new DiagnosticRegistrationOptions());
 
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }

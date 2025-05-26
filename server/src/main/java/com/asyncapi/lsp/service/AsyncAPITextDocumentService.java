@@ -1,5 +1,6 @@
 package com.asyncapi.lsp.service;
 
+import com.asyncapi.lsp.diagnostic.AsyncAPIDiagnosticService;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -7,14 +8,14 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.URI;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class AsyncAPITextDocumentService implements TextDocumentService {
+
+    private final AsyncAPIDiagnosticService asyncAPIDiagnosticService = new AsyncAPIDiagnosticService();
 
     @NotNull
     @Override
@@ -108,6 +109,12 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<List<? extends TextEdit>> onTypeFormatting(@NotNull DocumentOnTypeFormattingParams documentOnTypeFormattingParams) {
         return null;
+    }
+
+    @NotNull
+    @Override
+    public CompletableFuture<DocumentDiagnosticReport> diagnostic(@NotNull DocumentDiagnosticParams params) {
+        return CompletableFuture.supplyAsync(() -> asyncAPIDiagnosticService.run(params));
     }
 
     @Nullable
