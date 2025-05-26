@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class AsyncAPITextDocumentService implements TextDocumentService {
 
+    private final DocumentStorage documentStorage = DocumentStorage.instance;
     private final AsyncAPIDiagnosticService asyncAPIDiagnosticService = new AsyncAPIDiagnosticService();
 
     @NotNull
@@ -128,7 +129,7 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
         @NotNull final var uri = didOpenTextDocumentParams.getTextDocument().getUri();
         @NotNull final var content = didOpenTextDocumentParams.getTextDocument().getText();
 
-        // do nothing
+        documentStorage.write(uri, content);
     }
 
     @Override
@@ -136,14 +137,14 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
         @NotNull final var uri = didChangeTextDocumentParams.getTextDocument().getUri();
         @NotNull final var content = didChangeTextDocumentParams.getContentChanges().getFirst().getText();
 
-        // do nothing
+        documentStorage.write(uri, content);
     }
 
     @Override
     public void didClose(@NotNull DidCloseTextDocumentParams didCloseTextDocumentParams) {
         @NotNull final var uri = didCloseTextDocumentParams.getTextDocument().getUri();
 
-        // do nothing
+        documentStorage.remove(uri);
     }
 
     @Override
