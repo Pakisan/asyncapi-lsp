@@ -25,10 +25,6 @@ public class ValidationMessageConverter {
             switch (validationResult.validationErrorType()) {
                 case JSON_PARSING -> diagnostics.add(convert(validationResult.jsonParsingMessage()));
                 case JSON_SCHEMA_VALIDATION -> validationResult.validationMessages().stream()
-                        .filter(validationMessage ->
-                                validationMessage.getType().equals("required") ||
-                                        validationMessage.getType().equals("additionalProperties")
-                        )
                         .map(this::convert)
                         .forEach(diagnostics::add);
                 case null -> {
