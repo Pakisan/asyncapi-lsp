@@ -1,5 +1,6 @@
 package com.asyncapi.lsp.service;
 
+import com.asyncapi.lsp.diagnostic.AsyncAPIDiagnosticService;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -7,14 +8,15 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.URI;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class AsyncAPITextDocumentService implements TextDocumentService {
+
+    private final DocumentStorage documentStorage = DocumentStorage.instance;
+    private final AsyncAPIDiagnosticService asyncAPIDiagnosticService = new AsyncAPIDiagnosticService();
 
     @NotNull
     @Override
@@ -110,6 +112,12 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
         return null;
     }
 
+    @NotNull
+    @Override
+    public CompletableFuture<DocumentDiagnosticReport> diagnostic(@NotNull DocumentDiagnosticParams params) {
+        return CompletableFuture.supplyAsync(() -> asyncAPIDiagnosticService.run(params));
+    }
+
     @Nullable
     @Override
     public CompletableFuture<WorkspaceEdit> rename(@NotNull RenameParams renameParams) {
@@ -121,7 +129,7 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
         @NotNull final var uri = didOpenTextDocumentParams.getTextDocument().getUri();
         @NotNull final var content = didOpenTextDocumentParams.getTextDocument().getText();
 
-        // do nothing
+        documentStorage.write(uri, content);
     }
 
     @Override
@@ -129,14 +137,14 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
         @NotNull final var uri = didChangeTextDocumentParams.getTextDocument().getUri();
         @NotNull final var content = didChangeTextDocumentParams.getContentChanges().getFirst().getText();
 
-        // do nothing
+        documentStorage.write(uri, content);
     }
 
     @Override
     public void didClose(@NotNull DidCloseTextDocumentParams didCloseTextDocumentParams) {
         @NotNull final var uri = didCloseTextDocumentParams.getTextDocument().getUri();
 
-        // do nothing
+        documentStorage.remove(uri);
     }
 
     @Override

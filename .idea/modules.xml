@@ -4,6 +4,8 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/asyncapi-lsp.iml" filepath="$PROJECT_DIR$/asyncapi-lsp.iml" />
       <module fileurl="file://$PROJECT_DIR$/server.iml" filepath="$PROJECT_DIR$/server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/server.main.iml" filepath="$PROJECT_DIR$/.idea/modules/server.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/server.test.iml" filepath="$PROJECT_DIR$/.idea/modules/server.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/vscode-extension/vscode-extension.iml" filepath="$PROJECT_DIR$/vscode-extension/vscode-extension.iml" />
     </modules>
   </component>

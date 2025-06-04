@@ -25,6 +25,13 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.23.1")
     implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1")
     compileOnly("org.jetbrains:annotations:26.0.2")
+
+    // JSON Schema validation
+    implementation("com.networknt:json-schema-validator:1.5.6")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.1")
+
+    // Assertions
+    testImplementation("org.assertj:assertj-core:3.27.3")
 }
 
 tasks.test {
