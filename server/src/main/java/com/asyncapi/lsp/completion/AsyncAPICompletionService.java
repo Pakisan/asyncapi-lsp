@@ -16,6 +16,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -58,6 +59,7 @@ public class AsyncAPICompletionService {
         @NotNull Field[] classFields = {};
         @NotNull final var pathElements = new LinkedList<>(List.of(nodePath.split("/")));
         @NotNull final String fieldPartialName = pathElements.removeLast();
+        boolean nextPathElementIsMapKey = false;
         if (pathElements.size() > 1) {
             for (@NotNull String pathElement : pathElements) {
                 try {
@@ -75,24 +77,22 @@ public class AsyncAPICompletionService {
                                 "tags": [
                                   nam<caret>
                      */
-                    if (pathElement.isEmpty() || numericPattern.matcher(pathElement).matches() || "}".equals(fieldPartialName)) {
+                    if (pathElement.isEmpty()
+                            || numericPattern.matcher(pathElement).matches()
+                            || "}".equals(fieldPartialName)
+                            || nextPathElementIsMapKey
+                    ) {
+                        nextPathElementIsMapKey = false;
                         continue;
                     }
 
                     @NotNull final var classField = classToComplete.getDeclaredField(pathElement);
                     if (List.class.equals(classField.getType()) || Object.class.equals(classField.getType())) {
-                        @Nullable final JsonDeserialize deserializeStrategy = classField.getAnnotation(JsonDeserialize.class);
-                        if (deserializeStrategy != null) {
-                            @Nullable final Class<?> deserializeStrategyImplementation = deserializeStrategy.using();
+                        classToComplete = recognizeClass(classField);
 
-//                            if (deserializeStrategyImplementation != null && ListOfReferencesOrObjectsDeserializer.class.isAssignableFrom(deserializeStrategyImplementation)) {
-                            if (deserializeStrategyImplementation != null) {
-                                @NotNull final var method = deserializeStrategyImplementation.getMethod("objectTypeClass");
-                                @NotNull final var returnType = (ParameterizedType) method.getGenericReturnType();
-
-                                classToComplete = (Class<?>) returnType.getActualTypeArguments()[0];
-                            }
-                        }
+                    } else if (Map.class.equals(classField.getType())) {
+                        classToComplete = recognizeClass(classField);
+                        nextPathElementIsMapKey = true;
                     } else {
                         classToComplete = classToComplete.getDeclaredField(pathElement).getType();
                     }
@@ -127,6 +127,24 @@ public class AsyncAPICompletionService {
 //        completionItem.setInsertTextFormat(InsertTextFormat.Snippet);
 
         return completionItem;
+    }
+
+    @Nullable
+    public Class<?> recognizeClass(@NotNull Field classField) throws NoSuchMethodException {
+        @Nullable Class<?> classToComplete = null;
+        @Nullable final JsonDeserialize deserializeStrategy = classField.getAnnotation(JsonDeserialize.class);
+        if (deserializeStrategy != null) {
+            @Nullable final Class<?> deserializeStrategyImplementation = deserializeStrategy.using();
+
+            if (deserializeStrategyImplementation != null) {
+                @NotNull final var method = deserializeStrategyImplementation.getMethod("objectTypeClass");
+                @NotNull final var returnType = (ParameterizedType) method.getGenericReturnType();
+
+                classToComplete = (Class<?>) returnType.getActualTypeArguments()[0];
+            }
+        }
+
+        return classToComplete;
     }
 
 }
