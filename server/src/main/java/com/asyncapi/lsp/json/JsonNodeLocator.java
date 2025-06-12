@@ -23,10 +23,9 @@ public class JsonNodeLocator {
      * @param line The line number (1-based)
      * @param column The column number (1-based)
      * @return The JSON node at the specified location, or null if not found
-     * @throws IOException If there's an error parsing the JSON
      */
     @Nullable
-    public static String findNodeAtLocation(@NotNull String jsonContent, int line, int column) throws IOException {
+    public static String findNodeAtLocation(@NotNull String jsonContent, int line, int column) {
         JsonFactory jsonFactory = new JsonFactory();
         try (JsonParser jsonParser = jsonFactory.createParser(jsonContent)) {
             jsonParser.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
@@ -34,7 +33,7 @@ public class JsonNodeLocator {
             jsonParser.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
 
             return findNodeAtLocation(jsonParser, line, column);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error while parsing JSON: {}", e.getMessage());
         }
 
@@ -64,6 +63,13 @@ public class JsonNodeLocator {
                 int line = location.getLineNr();
                 int column = location.getColumnNr();
 
+                if (token == JsonToken.VALUE_STRING) {
+                    if (line == targetLine) {
+                        result = parser.getParsingContext().pathAsPointer().toString();
+                        break;
+                    }
+                }
+
                 if (token == JsonToken.FIELD_NAME) {
                     if (line == targetLine) {
                         result = parser.getParsingContext().pathAsPointer().toString();
@@ -84,6 +90,15 @@ public class JsonNodeLocator {
         if (exception.getProcessor().getCurrentToken() == null) {
             tokenToComplete = exception.getProcessor().getParsingContext().pathAsPointer().toString();
         } else {
+            /*
+                Incomplete JSON will throw JsonParseException. I can ignore this exception because processor
+                will contain all required info about current parsing context
+
+                Example:
+                {
+                  asy<caret>
+                }
+             */
             final var parent = exception.getProcessor().getParsingContext().getParent().pathAsPointer();
             tokenToComplete = parent + "/" + exception.getProcessor().getText();
         }

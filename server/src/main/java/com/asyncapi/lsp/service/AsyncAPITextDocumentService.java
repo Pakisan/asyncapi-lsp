@@ -1,5 +1,6 @@
 package com.asyncapi.lsp.service;
 
+import com.asyncapi.lsp.completion.AsyncAPICompletionService;
 import com.asyncapi.lsp.diagnostic.AsyncAPIDiagnosticService;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.lsp4j.*;
@@ -8,30 +9,20 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class AsyncAPITextDocumentService implements TextDocumentService {
 
+    private final AsyncAPICompletionService asyncAPICompletionService = new AsyncAPICompletionService();
     private final DocumentStorage documentStorage = DocumentStorage.instance;
     private final AsyncAPIDiagnosticService asyncAPIDiagnosticService = new AsyncAPIDiagnosticService();
 
     @NotNull
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(@NotNull CompletionParams completionParams) {
-        return CompletableFuture.supplyAsync(() -> {
-            var completionItems = Collections.<CompletionItem>emptyList();
-            try {
-                log.debug("Completing: {}", completionParams.getTextDocument().getUri());
-//                completionItems = ContentParserUtil.getCompletions(completionParams);
-            } catch (Exception e) {
-                log.error("Error while completion: {}", e.getMessage());
-            }
-
-            return Either.forLeft(completionItems);
-        });
+        return CompletableFuture.supplyAsync(() -> Either.forRight(asyncAPICompletionService.run(completionParams)));
     }
 
     @Nullable
