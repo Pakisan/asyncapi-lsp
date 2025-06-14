@@ -3,6 +3,7 @@ package com.asyncapi.lsp.completion;
 import com.asyncapi.lsp.json.JsonNodeLocator;
 import com.asyncapi.lsp.service.DocumentStorage;
 import com.asyncapi.v3._0_0.model.AsyncAPI;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.lsp4j.CompletionItem;
@@ -104,7 +105,7 @@ public class AsyncAPICompletionService {
         }
         classFields = classToComplete == null ? classFields : classToComplete.getDeclaredFields();
 
-        final var variants = Stream.of(classFields).map(Field::getName).collect(Collectors.toSet());
+        final var variants = Stream.of(classFields).map(this::recognizeFieldName).collect(Collectors.toSet());
         final var completion = new CompletionList();
         completion.setItems(variants.stream().map(
                 variant -> asCompletionItem(variant, fieldPartialName)
@@ -145,6 +146,19 @@ public class AsyncAPICompletionService {
         }
 
         return classToComplete;
+    }
+
+    @NotNull
+    public String recognizeFieldName(@NotNull Field field) {
+        @NotNull String fieldName = field.getName();
+        @Nullable final JsonProperty alternativeName = field.getAnnotation(JsonProperty.class);
+        if (alternativeName != null) {
+            if (alternativeName.value() != null) {
+                fieldName = alternativeName.value();
+            }
+        }
+
+        return fieldName;
     }
 
 }
