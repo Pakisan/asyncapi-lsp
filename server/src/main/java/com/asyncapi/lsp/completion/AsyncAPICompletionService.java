@@ -1,5 +1,6 @@
 package com.asyncapi.lsp.completion;
 
+import com.asyncapi.lsp.TextDocumentCompletion;
 import com.asyncapi.lsp.json.JsonNodeLocator;
 import com.asyncapi.lsp.service.DocumentStorage;
 import com.asyncapi.v3._0_0.model.AsyncAPI;
@@ -105,27 +106,30 @@ public class AsyncAPICompletionService {
         }
         classFields = classToComplete == null ? classFields : classToComplete.getDeclaredFields();
 
-        final var variants = Stream.of(classFields).map(this::recognizeFieldName).collect(Collectors.toSet());
+        final var variants = Stream.of(classFields).collect(Collectors.toSet());
         final var completion = new CompletionList();
-        completion.setItems(variants.stream().map(
-                variant -> asCompletionItem(variant, fieldPartialName)
-        ).collect(Collectors.toList()));
+        completion.setItems(variants.stream().map(variant -> asCompletionItem(variant, fieldPartialName)).collect(Collectors.toList()));
 
         return completion;
     }
 
     @NotNull
-    public CompletionItem asCompletionItem(@NotNull String variant, @NotNull String fieldPartialName) {
+    public CompletionItem asCompletionItem(@NotNull Field field, @NotNull String fieldPartialName) {
         final var completionItem = new CompletionItem();
-        completionItem.setLabel(variant);
-        completionItem.setInsertText("\"" + variant + "\"");
-        completionItem.setPreselect(variant.startsWith(fieldPartialName));
-        completionItem.setKind(CompletionItemKind.Property);
-        completionItem.setDetail("completion item detail");
-        completionItem.setDocumentation("completion item documentation");
 
-//        completionItem.setInsertText("\"asyncapi\": \"${0:2.6.0}\"");
-//        completionItem.setInsertTextFormat(InsertTextFormat.Snippet);
+        @Nullable final TextDocumentCompletion completionHint = field.getAnnotation(TextDocumentCompletion.class);
+        if (completionHint != null) {
+            completionItem.setDetail(completionHint.detail());
+            completionItem.setDocumentation(completionHint.documentation());
+        }
+
+        completionItem.setLabel(recognizeLabel(field));
+        completionItem.setPreselect(completionItem.getLabel().startsWith(fieldPartialName));
+        if ("String".equals(completionItem.getDetail())) {
+            completionItem.setKind(CompletionItemKind.Field);
+        } else {
+            completionItem.setKind(CompletionItemKind.Struct);
+        }
 
         return completionItem;
     }
@@ -148,8 +152,16 @@ public class AsyncAPICompletionService {
         return classToComplete;
     }
 
+    /**
+     * Check does given field have <code>@JsonProperty</code> annotation with value or not
+     * <p>
+     * If value exists, then it's value will be returned otherwise original field name
+     *
+     * @param field field
+     * @return label to use
+     */
     @NotNull
-    public String recognizeFieldName(@NotNull Field field) {
+    public String recognizeLabel(@NotNull Field field) {
         @NotNull String fieldName = field.getName();
         @Nullable final JsonProperty alternativeName = field.getAnnotation(JsonProperty.class);
         if (alternativeName != null) {
