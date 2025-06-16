@@ -28,3 +28,8 @@ LSP features:
 | [textDocument/codeAction](https://microsoft.github.io/language-server-protocol/specification/#textDocument_codeAction)                 | Quick-fixes for errors and warnings | 🤔     |
 | [textDocument/publishDiagnostics](https://microsoft.github.io/language-server-protocol/specification/#textDocument_publishDiagnostics) | Quick-fixes for errors and warnings | ⚒️     |
 | [textDocument/completion](https://microsoft.github.io/language-server-protocol/specification/#textDocument_completion)                 | Code completion                     | 🤔     |
+
+Editors to support:
+- [Visual Studio Code](https://code.visualstudio.com)
+- [Zed](https://zed.dev)
+- [Sublime Text](https://www.sublimetext.com)
