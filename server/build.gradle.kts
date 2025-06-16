@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("application")
 }
 
 group = "com.asyncapi.lsp"
@@ -37,4 +38,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+}
+
+application {
+    applicationName = "asyncapi-lsp-server"
+    mainClass = "com.asyncapi.lsp.Main"
 }
