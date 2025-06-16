@@ -1,0 +1,13 @@
+[package]
+name = "zed_asyncapi"
+version = "1.0.0-SNAPSHOT"
+license = "Apache-2.0"
+edition = "2021"
+
+[lib]
+# path = "src/asyncapi.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.5.0"
+serde_json = "1.0.140"
