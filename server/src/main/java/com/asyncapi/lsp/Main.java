@@ -15,6 +15,11 @@ import java.util.concurrent.Executors;
 public class Main {
 
     public static void main(String[] args) {
+//        tcpMode();
+        ioMode();
+    }
+
+    public static void tcpMode() {
         final var serverPort = 5005;
         @NotNull final var languageServer = new AsyncAPILanguageServer();
 
@@ -38,6 +43,12 @@ public class Main {
         } finally {
             log.info("Exiting");
         }
+    }
+
+    public static void ioMode() {
+        @NotNull final var languageServer = new AsyncAPILanguageServer();
+        Launcher<LanguageClient> launcher = LSPLauncher.createServerLauncher(languageServer, System.in, System.out);
+        launcher.startListening();
     }
 
 }
