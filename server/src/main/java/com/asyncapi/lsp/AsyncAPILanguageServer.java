@@ -32,6 +32,7 @@ public class AsyncAPILanguageServer implements LanguageServer {
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
         initializeResult.getCapabilities().setCompletionProvider(new CompletionOptions());
         initializeResult.getCapabilities().setDiagnosticProvider(new DiagnosticRegistrationOptions());
+        initializeResult.getCapabilities().setHoverProvider(new HoverOptions());
 
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
