@@ -2,6 +2,7 @@ package com.asyncapi.lsp.service;
 
 import com.asyncapi.lsp.completion.AsyncAPICompletionService;
 import com.asyncapi.lsp.diagnostic.AsyncAPIDiagnosticService;
+import com.asyncapi.lsp.hover.AsyncAPIHoverService;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -18,6 +19,7 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
     private final AsyncAPICompletionService asyncAPICompletionService = new AsyncAPICompletionService();
     private final DocumentStorage documentStorage = DocumentStorage.instance;
     private final AsyncAPIDiagnosticService asyncAPIDiagnosticService = new AsyncAPIDiagnosticService();
+    private final AsyncAPIHoverService asyncAPIHoverService = new AsyncAPIHoverService();
 
     @NotNull
     @Override
@@ -34,7 +36,7 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
     @Nullable
     @Override
     public CompletableFuture<Hover> hover(@NotNull HoverParams params) {
-        return null;
+        return CompletableFuture.supplyAsync(() -> asyncAPIHoverService.run(params));
     }
 
     @Nullable

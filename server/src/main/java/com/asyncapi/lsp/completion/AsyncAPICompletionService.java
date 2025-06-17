@@ -1,11 +1,10 @@
 package com.asyncapi.lsp.completion;
 
 import com.asyncapi.lsp.TextDocumentCompletion;
-import com.asyncapi.lsp.json.JsonNodeLocator;
 import com.asyncapi.lsp.service.DocumentStorage;
+import com.asyncapi.lsp.service.Utils;
 import com.asyncapi.v3._0_0.model.AsyncAPI;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
@@ -15,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -46,11 +44,7 @@ public class AsyncAPICompletionService {
         }
 
         log.debug("Completing: {}", uri);
-        final var nodePath = JsonNodeLocator.findNodeAtLocation(
-                content,
-                cursorPosition.getLine() + 1,
-                cursorPosition.getCharacter() + 1
-        );
+        final var nodePath = Utils.nodePath(content, cursorPosition);
         if (nodePath == null) {
             return emptyCompletion;
         }
@@ -90,10 +84,10 @@ public class AsyncAPICompletionService {
 
                     @NotNull final var classField = classToComplete.getDeclaredField(pathElement);
                     if (List.class.equals(classField.getType()) || Object.class.equals(classField.getType())) {
-                        classToComplete = recognizeClass(classField);
+                        classToComplete = Utils.recognizeClass(classField);
 
                     } else if (Map.class.equals(classField.getType())) {
-                        classToComplete = recognizeClass(classField);
+                        classToComplete = Utils.recognizeClass(classField);
                         nextPathElementIsMapKey = true;
                     } else {
                         classToComplete = classToComplete.getDeclaredField(pathElement).getType();
@@ -132,24 +126,6 @@ public class AsyncAPICompletionService {
         }
 
         return completionItem;
-    }
-
-    @Nullable
-    public Class<?> recognizeClass(@NotNull Field classField) throws NoSuchMethodException {
-        @Nullable Class<?> classToComplete = null;
-        @Nullable final JsonDeserialize deserializeStrategy = classField.getAnnotation(JsonDeserialize.class);
-        if (deserializeStrategy != null) {
-            @Nullable final Class<?> deserializeStrategyImplementation = deserializeStrategy.using();
-
-            if (deserializeStrategyImplementation != null) {
-                @NotNull final var method = deserializeStrategyImplementation.getMethod("objectTypeClass");
-                @NotNull final var returnType = (ParameterizedType) method.getGenericReturnType();
-
-                classToComplete = (Class<?>) returnType.getActualTypeArguments()[0];
-            }
-        }
-
-        return classToComplete;
     }
 
     /**
