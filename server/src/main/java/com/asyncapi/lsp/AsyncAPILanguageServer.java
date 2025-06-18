@@ -2,15 +2,18 @@ package com.asyncapi.lsp;
 
 import com.asyncapi.lsp.service.AsyncAPITextDocumentService;
 import com.asyncapi.lsp.service.AsyncAPIWorkspaceService;
+import lombok.Getter;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
+import org.eclipse.lsp4j.services.LanguageClient;
+import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 
-public class AsyncAPILanguageServer implements LanguageServer {
+public class AsyncAPILanguageServer implements LanguageServer, LanguageClientAware {
 
     @NotNull
     private final TextDocumentService textDocumentService;
@@ -18,11 +21,20 @@ public class AsyncAPILanguageServer implements LanguageServer {
     @NotNull
     private final WorkspaceService workspaceService;
 
+    @Getter
+    @NotNull
+    private LanguageClient client;
+
     private int shutDownStatus = 1;
 
     public AsyncAPILanguageServer() {
-        this.textDocumentService = new AsyncAPITextDocumentService();
+        this.textDocumentService = new AsyncAPITextDocumentService(this);
         this.workspaceService = new AsyncAPIWorkspaceService();
+    }
+
+    @Override
+    public void connect(LanguageClient client) {
+        this.client = client;
     }
 
     @NotNull

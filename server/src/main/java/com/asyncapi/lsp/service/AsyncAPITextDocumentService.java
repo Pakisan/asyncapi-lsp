@@ -1,5 +1,6 @@
 package com.asyncapi.lsp.service;
 
+import com.asyncapi.lsp.AsyncAPILanguageServer;
 import com.asyncapi.lsp.completion.AsyncAPICompletionService;
 import com.asyncapi.lsp.diagnostic.AsyncAPIDiagnosticService;
 import com.asyncapi.lsp.hover.AsyncAPIHoverService;
@@ -16,10 +17,17 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class AsyncAPITextDocumentService implements TextDocumentService {
 
+    @NotNull
+    private final AsyncAPILanguageServer server;
+
     private final AsyncAPICompletionService asyncAPICompletionService = new AsyncAPICompletionService();
     private final DocumentStorage documentStorage = DocumentStorage.instance;
     private final AsyncAPIDiagnosticService asyncAPIDiagnosticService = new AsyncAPIDiagnosticService();
     private final AsyncAPIHoverService asyncAPIHoverService = new AsyncAPIHoverService();
+
+    public AsyncAPITextDocumentService(@NotNull AsyncAPILanguageServer server) {
+        this.server = server;
+    }
 
     @NotNull
     @Override

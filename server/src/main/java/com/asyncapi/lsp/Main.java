@@ -31,6 +31,8 @@ public class Main {
                                 Socket socket = serverSocket.accept();
 
                                 Launcher<LanguageClient> launcher = LSPLauncher.createServerLauncher(languageServer, socket.getInputStream(), socket.getOutputStream());
+                                LanguageClient languageClient = launcher.getRemoteProxy();
+                                languageServer.connect(languageClient);
                                 launcher.startListening();
                             }
                         }
@@ -48,6 +50,8 @@ public class Main {
     public static void ioMode() {
         @NotNull final var languageServer = new AsyncAPILanguageServer();
         Launcher<LanguageClient> launcher = LSPLauncher.createServerLauncher(languageServer, System.in, System.out);
+        LanguageClient languageClient = launcher.getRemoteProxy();
+        languageServer.connect(languageClient);
         launcher.startListening();
     }
 
