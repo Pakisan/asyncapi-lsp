@@ -28,13 +28,25 @@ public class AsyncAPILanguageServer implements LanguageServer {
     @NotNull
     @Override
     public CompletableFuture<InitializeResult> initialize(@NotNull InitializeParams initializeParams) {
-        final var initializeResult = new InitializeResult(new ServerCapabilities());
-        initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
-        initializeResult.getCapabilities().setCompletionProvider(new CompletionOptions());
-        initializeResult.getCapabilities().setDiagnosticProvider(new DiagnosticRegistrationOptions());
-        initializeResult.getCapabilities().setHoverProvider(new HoverOptions());
+        // textDocument/completion
+        final var completionOptions = new CompletionOptions();
+        completionOptions.setResolveProvider(false);
 
-        return CompletableFuture.supplyAsync(() -> initializeResult);
+        // textDocument/hover
+        final var hoverOptions = new HoverOptions();
+        hoverOptions.setWorkDoneProgress(false);
+
+        // textDocument/publishDiagnostics
+        final var diagnosticOptions = new DiagnosticRegistrationOptions();
+
+        final var capabilities = new ServerCapabilities();
+        capabilities.setCompletionProvider(completionOptions);
+        capabilities.setDiagnosticProvider(diagnosticOptions);
+        capabilities.setHoverProvider(hoverOptions);
+        capabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+
+        final var initializeResult = new InitializeResult(capabilities);
+        return CompletableFuture.completedFuture(initializeResult);
     }
 
     @Override
