@@ -141,7 +141,7 @@ public class AsyncAPICompletionService {
         @NotNull String fieldName = field.getName();
         @Nullable final JsonProperty alternativeName = field.getAnnotation(JsonProperty.class);
         if (alternativeName != null) {
-            if (alternativeName.value() != null) {
+            if (!alternativeName.value().isEmpty()) {
                 fieldName = alternativeName.value();
             }
         }
