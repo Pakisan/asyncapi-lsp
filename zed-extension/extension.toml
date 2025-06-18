@@ -4,7 +4,7 @@ description = "AsyncAPI support"
 version = "1.0.0-SNAPSHOT"
 schema_version = 1
 authors = ["Pavel Bodiachevskii <pavelbodyachevskiy@gmail.com>"]
-repository = "https://github.com/Pakisan/asyncapi-lsp/tree/master/zed-plugin"
+repository = "https://github.com/Pakisan/asyncapi-lsp/tree/master/zed-extension"
 
 [language_servers.asyncapi-language-server]
 name = "AsyncAPI LSP"
