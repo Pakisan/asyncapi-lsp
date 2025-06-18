@@ -6,6 +6,7 @@ import com.asyncapi.lsp.service.DocumentStorage;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.lsp4j.DocumentDiagnosticParams;
 import org.eclipse.lsp4j.DocumentDiagnosticReport;
+import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.RelatedFullDocumentDiagnosticReport;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +36,19 @@ public class AsyncAPIDiagnosticService {
 
         documentDiagnosticResult.setItems(validationMessageConverter.convert(jsonSchemaValidationResult));
         return new DocumentDiagnosticReport(documentDiagnosticResult);
+    }
+
+    @NotNull
+    public PublishDiagnosticsParams run(@NotNull String uri) {
+        log.debug("Analysing: {}", uri);
+        @Nullable final var content = documentStorage.read(uri);
+        @NotNull final var jsonSchemaValidationResult = jsonSchemaValidator.validate(content, true);
+
+        final var publishDiagnosticsParams = new PublishDiagnosticsParams();
+        publishDiagnosticsParams.setUri(uri);
+        publishDiagnosticsParams.setDiagnostics(validationMessageConverter.convert(jsonSchemaValidationResult));
+
+        return publishDiagnosticsParams;
     }
 
 }

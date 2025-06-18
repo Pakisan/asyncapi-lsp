@@ -131,6 +131,7 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
         @NotNull final var content = didOpenTextDocumentParams.getTextDocument().getText();
 
         documentStorage.write(uri, content);
+        server.getClient().publishDiagnostics(asyncAPIDiagnosticService.run(uri));
     }
 
     @Override
@@ -139,6 +140,7 @@ public class AsyncAPITextDocumentService implements TextDocumentService {
         @NotNull final var content = didChangeTextDocumentParams.getContentChanges().getFirst().getText();
 
         documentStorage.write(uri, content);
+        server.getClient().publishDiagnostics(asyncAPIDiagnosticService.run(uri));
     }
 
     @Override
